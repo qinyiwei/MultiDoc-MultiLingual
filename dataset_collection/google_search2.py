@@ -65,8 +65,8 @@ def process_keywords(orig_text, keywords, lang):
     return short_text
 
 
-MY_API_KEY = "AIzaSyBG-Z5smG4Y1HSTXlRtcd-aCi1REIM3t_Y"
-MY_CSE_ID = "e3e53fc6b8c4d4c88"
+MY_API_KEY =  # add your google search API key
+MY_CSE_ID =  # add your Custom Search Engine ID
 
 if __name__ == "__main__":
     data_dir = "./Multi-Doc-Sum/Mtl_data"
