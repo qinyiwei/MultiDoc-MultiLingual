@@ -8,6 +8,7 @@ import csv
 import time
 import datetime
 from googleapiclient.errors import HttpError
+import click
 
 lang_2_summary_dict = {
     "EN": "text",
@@ -19,6 +20,8 @@ lang_2_summary_dict = {
     "cantonese": "text",
     "chinese": "text",
 }
+
+SURPPORT_LANGS = ["EN", "cantonese", "chinese"]
 
 PL_month_dict = {
     "Stycznia": 1,
@@ -86,7 +89,6 @@ CZ_month_dict = {
 
 def google_search(search_term, api_key, cse_id, **kwargs):
     service = build("customsearch", "v1", developerKey=api_key)
-    #res = service.cse().list(q=search_term, cx=cse_id, **kwargs).execute()
     res = service.cse().list(q='{} -filetype:pdf -filetype:txt -filetype:xls -filetype:doc -filetype:docx -filetype:ppt -filetype:pptx -filetype:jsonl'.format(search_term),
                              cx=cse_id, **kwargs).execute()
     if 'items' in res:
@@ -282,15 +284,14 @@ def process_keywords(orig_text, keywords, lang):
     return short_text
 
 
-MY_API_KEY =  # add your google search API key
-MY_CSE_ID =  # add your Custom Search Engine ID
-
-if __name__ == "__main__":
-    data_dir = "./Multi-Doc-Sum/Mtl_data"
-    keywords_dir = "./Multi-Doc-Sum/keywords_extraction_keyBERT"
-    data_aug_dir = "./Multi-Doc-Sum/Mtl_data_aug_keyBERT"
-    file_name = "cantonese_crawl.jsonl"
-
+@click.command()
+@click.option('--my_api_key', required=True, default=None)
+@click.option('--my_cse_id', required=True, default=None)
+@click.option('--data_dir', required=True, default=None)
+@click.option('--keywords_dir', required=True, default=None)
+@click.option('--file_name', required=True, default=None)
+@click.option('--data_aug_dir', required=True, default=None)
+def main(my_api_key: str, my_cse_id: str, data_dir: str, keywords_dir: str, file_name: str,  data_aug_dir: str):
     data = []
     for line in open(os.path.join(data_dir, file_name), 'r'):
         data.append(json.loads(line))
@@ -323,33 +324,35 @@ if __name__ == "__main__":
 
     lang = file_name.split("_")[0]
     id = start_id + id
-    #YEAR = []
-    #MONTH = []
-    #DAY  = []
     while id < (len(data) if data_num is None else data_num):
         text = data[id][lang_2_summary_dict[lang]]
+        date = data[id]["date"]
         keywords = keywords_dict[id]
         keywords = process_keywords(text, keywords, lang)
-        date = data[id]["date"]
-        year, month, day = parse_date(date, lang)
-        # print(date)
-        # YEAR.append(year)
-        # MONTH.append(month)
-        # DAY.append(month)
-
-        start_date, end_date = get_date_range(year, month, day)
-        print("orig date:{}/{}/{}".format(year, month, day))
-        print("start_date:{}, end_date:{}".format(start_date, end_date))
+        if lang in SURPPORT_LANGS:
+            year, month, day = parse_date(date, lang)
+            start_date, end_date = get_date_range(year, month, day)
+            print("orig date:{}/{}/{}".format(year, month, day))
+            print("start_date:{}, end_date:{}".format(start_date, end_date))
+        else:
+            # use date+keywords as Query
+            keywords = keywords_dict[id]
+            keywords = process_keywords(text, keywords, lang)
+            keywords = date + ' ' + keywords
 
         aug_links = []
         page_id = 0
 
         while (page_id < pages):
             try:
-                results = google_search(keywords, MY_API_KEY, MY_CSE_ID,
-                                        sort="date:r:{}:{}".format(
-                                            start_date, end_date),
-                                        num=data_aug_num, start=data_aug_num*page_id+1)
+                if lang in SURPPORT_LANGS:
+                    results = google_search(keywords, my_api_key, my_cse_id,
+                                            sort="date:r:{}:{}".format(
+                                                start_date, end_date),
+                                            num=data_aug_num, start=data_aug_num*page_id+1)
+                else:
+                    results = google_search(keywords, my_api_key, my_cse_id,
+                                            num=data_aug_num, start=data_aug_num*page_id+1)
                 if len(results) != 0:
                     aug_links.extend([result['link'] for result in results])
                 page_id += 1
@@ -362,13 +365,22 @@ if __name__ == "__main__":
             except Exception as e:
                 print(e)
                 exit()
-        data_cur = {
-            "id": id,
-            "date": date,
-            "date-range": "{}-{}".format(start_date, end_date),
-            "summary": text,
-            "references_aug": aug_links
-        }
+        if lang in SURPPORT_LANGS:
+            data_cur = {
+                "id": id,
+                "date": date,
+                "date-range": "{}-{}".format(start_date, end_date),
+                "summary": text,
+                "references_aug": aug_links
+            }
+        else:
+            data_cur = {
+                "id": id,
+                "date": date,
+                "query": keywords,
+                "summary": text,
+                "references_aug": aug_links
+            }
         data_aug.append(data_cur)
         print("orig text:{}".format(text))
         print("short text:{}".format(keywords))
@@ -380,7 +392,8 @@ if __name__ == "__main__":
         json.dump(data_cur, output_file)
         output_file.write("\n")
         id = id + 1
-    # print(list(set(YEAR)))
-    # print(list(set(MONTH)))
-    # print(list(set(DAY)))
     output_file.close()
+
+
+if __name__ == "__main__":
+    main()

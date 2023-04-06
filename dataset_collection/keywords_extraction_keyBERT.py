@@ -96,11 +96,10 @@ lang_2_summary_dict = {
 
 
 @click.command()
+@click.option('--data_dir', required=True, default=None)
+@click.option('--output_dir', required=True, default=None)
 @click.option('--file_name', required=True, default=None)
-def main(file_name: str):
-    data_dir = "./Multi-Doc-Sum/Mtl_data"
-    output_dir = "./Multi-Doc-Sum/keywords_extraction_keyBERT"
-
+def main(data_dir: str, output_dir: str, file_name: str):
     start_id = 0
     end_id = None
     lang = file_name.split("_")[0]
