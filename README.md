@@ -104,8 +104,8 @@ $ python baselines/mt5/prepare_dataset.py \
 
 - Here is an example [trainer_cantonese.sh](baselines/mt5/examples/trainer_cantonese.sh) to train single langauge mt5 model. 
 
-- Here is an example [train_multilingual.sh](baselines/mt5/examples/train_multilingual.sh) to train multilingual mt5 model. Our trained multilingual model can be downloaded from . 
+- Here is an example [train_multilingual.sh](baselines/mt5/examples/train_multilingual.sh) to train multilingual mt5 model. Our trained multilingual model can be downloaded from [Multilingual-mt5](https://drive.google.com/drive/u/1/folders/1JJ1XvAeL7JFCxPv5IHPhyVmjDfRetpW7). 
 
 
 ## Evaluation
-Here is an example [evaluation.py](evaluation/run_evaluation.py) to use evaluation metrics: BERTScore and T5Score. To run T5Score, a T5Score model should be downloaded from   to directory ./model/T5Score/.
+Here is an example [evaluation.py](evaluation/run_evaluation.py) to use evaluation metrics: BERTScore and T5Score. To run T5Score, a T5Score model should be downloaded from [T5Score-summ](https://drive.google.com/drive/u/1/folders/1VrVWRbXZRBDnl4pGvcfvfLzF4P4JRO_m) to directory ./model/T5Score/.
